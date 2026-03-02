@@ -1,7 +1,13 @@
 [project]
 name = "stge"
 version = "0.1.0"
-description = "Add your description here"
+description = "STGE: Simple Terminal Game Engine"
 readme = "README.md"
+authors = [{ name = "Quentin Lurkin", email = "qlurkin@gmail.com" }]
 requires-python = ">=3.13"
 dependencies = []
+classifiers = ["License :: OSI Approved :: MIT License"]
+
+[build-system]
+requires = ["uv_build>=0.10.7,<0.11.0"]
+build-backend = "uv_build"

@@ -231,7 +231,7 @@ def restore():
     flush()
 
 
-def exit():
+def quit():
     restore()
     sys.exit()
 
@@ -262,7 +262,7 @@ if __name__ == "__main__":
     def render(out):
         keys = keypresses()
         if "q" in keys or "Q" in keys:
-            exit()
+            quit()
         if len(keys) > 0:
             out.extend(keys)
         width, height = size()
