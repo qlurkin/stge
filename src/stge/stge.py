@@ -89,6 +89,10 @@ def input_thread():
             _char_queue.put(ch)
 
 
+class NoKey(Exception):
+    pass
+
+
 def read_key():
     try:
         ch = _char_queue.get_nowait()
@@ -97,7 +101,7 @@ def read_key():
             raise KeyboardInterrupt
         return ch
     except queue.Empty:
-        return ""
+        raise NoKey
 
 
 def flush():
@@ -238,10 +242,12 @@ def quit():
 
 def keypresses():
     res = []
-    key = read_key()
-    while len(key) > 0:
-        res.append(key)
-        key = read_key()
+    while True:
+        try:
+            key = read_key()
+            res.append(key)
+        except NoKey:
+            break
     return res
 
 
@@ -250,31 +256,12 @@ def run(render, *initial_state, fps=30):
     state = initial_state
     while True:
         clear()
-        state = render(*state)
+        keys = keypresses()
+        state = render(keys, *state)
         flush()
         if not isinstance(state, tuple):
-            state = (state,)
+            if state is not None:
+                state = (state,)
+            else:
+                state = tuple()
         time.sleep(1 / fps)
-
-
-if __name__ == "__main__":
-
-    def render(out):
-        keys = keypresses()
-        if "q" in keys or "Q" in keys:
-            quit()
-        if len(keys) > 0:
-            out.extend(keys)
-        width, height = size()
-        write_at(width // 2 - 2, height // 2, out, italic=True)
-        pixels(
-            [
-                [(255, 0, 0), (255, 0, 0), (255, 0, 0)],
-                [(255, 0, 0), (0, 0, 255), (255, 0, 0)],
-                [(255, 0, 0), (255, 0, 0), (255, 0, 0)],
-            ],
-        )
-        write_at(width // 2 - 4, height, "[Q: Quit]")
-        return out
-
-    run(render, [])
