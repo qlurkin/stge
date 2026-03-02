@@ -1,8 +1,7 @@
-from stge import stge
+import stge
 
 
-def render(out):
-    keys = stge.keypresses()
+def render(keys, out):
     if "q" in keys or "Q" in keys:
         stge.quit()
     if len(keys) > 0:
@@ -16,7 +15,7 @@ def render(out):
             [(255, 0, 0), (255, 0, 0), (255, 0, 0)],
         ],
     )
-    stge.write_at(width // 2 - 4, height, "[Q: Quit]")
+    stge.write_at(width // 2 - 4, height - 1, "[Q: Quit]")
     return out
 
 
