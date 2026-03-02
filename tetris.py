@@ -1,8 +1,13 @@
 import stge
 
 
-def render(keys):
-    pass
+def setup():
+    board = [[None for j in range(10)] for i in range(22)]
+    return board
 
 
-stge.run(render)
+def loop(keys, board):
+    return board
+
+
+stge.run(setup, loop)

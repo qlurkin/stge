@@ -251,17 +251,20 @@ def keypresses():
     return res
 
 
-def run(render, *initial_state, fps=30):
+def ensure_tuple(value):
+    if not isinstance(value, tuple):
+        if value is not None:
+            return (value,)
+        return tuple()
+    return value
+
+
+def run(setup, loop, fps=30):
     init()
-    state = initial_state
+    state = ensure_tuple(setup())
     while True:
         clear()
         keys = keypresses()
-        state = render(keys, *state)
+        state = ensure_tuple(loop(keys, *state))
         flush()
-        if not isinstance(state, tuple):
-            if state is not None:
-                state = (state,)
-            else:
-                state = tuple()
         time.sleep(1 / fps)

@@ -1,7 +1,7 @@
 import stge
 
 
-def render(keys, out):
+def loop(keys, out):
     if "q" in keys or "Q" in keys:
         stge.quit()
     if len(keys) > 0:
@@ -19,4 +19,4 @@ def render(keys, out):
     return out
 
 
-stge.run(render, [])
+stge.run(setup=list, loop=loop)
