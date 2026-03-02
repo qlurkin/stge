@@ -6,7 +6,6 @@ import threading
 import queue
 
 _char_queue = queue.Queue()
-_running = False
 
 
 IS_WINDOWS = platform.system() == "Windows"
@@ -40,6 +39,7 @@ if IS_WINDOWS:
                 b"\t": "TAB",
                 b"\x1b": "",
                 b"\x08": "BACKSPACE",
+                b"\x03": "SIGINT",
                 b" ": "SPACE",
             }.get(b, b.decode("ascii"))
         except UnicodeDecodeError:
@@ -77,23 +77,25 @@ else:
             "\n": "ENTER",
             "\t": "TAB",
             "\x7f": "BACKSPACE",
+            "\x03": "SIGINT",
             " ": "SPACE",
         }.get(ch, ch)
 
 
 def input_thread():
-    global _running
-    while _running:
+    while True:
         ch = getch()
-        if ch in ("q", "Q"):
-            _running = False
         if len(ch) > 0:
             _char_queue.put(ch)
 
 
 def read_key():
     try:
-        return _char_queue.get_nowait()
+        ch = _char_queue.get_nowait()
+        if ch == "SIGINT":
+            restore()
+            raise KeyboardInterrupt
+        return ch
     except queue.Empty:
         return ""
 
@@ -104,11 +106,6 @@ def flush():
 
 def write(msg):
     sys.stdout.write(msg)
-
-
-def footer():
-    w, h = size()
-    write_at(w // 2 - 4, h, "[Q: Quit]")
 
 
 def clear():
@@ -248,24 +245,24 @@ def keypresses():
     return res
 
 
-def run(render, *state, fps=30):
-    global _running
-    _running = True
+def run(render, *initial_state, fps=30):
     init()
-    while _running:
+    state = initial_state
+    while True:
         clear()
         state = render(*state)
         flush()
         if not isinstance(state, tuple):
             state = (state,)
         time.sleep(1 / fps)
-    restore()
 
 
 if __name__ == "__main__":
 
     def render(out):
         keys = keypresses()
+        if "q" in keys or "Q" in keys:
+            exit()
         if len(keys) > 0:
             out.extend(keys)
         width, height = size()
@@ -277,7 +274,7 @@ if __name__ == "__main__":
                 [(255, 0, 0), (255, 0, 0), (255, 0, 0)],
             ],
         )
-        footer()
+        write_at(width // 2 - 4, height, "[Q: Quit]")
         return out
 
     run(render, [])
