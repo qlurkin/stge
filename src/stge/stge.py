@@ -209,8 +209,8 @@ def pixels(rows, column=0, row=0):
     move(column, row)
     for i in range(len(rows) // 2):
         for j in range(len(rows[i])):
-            set_fg(*rows[i][j])
-            set_bg(*rows[i + 1][j])
+            set_fg(*rows[i * 2][j])
+            set_bg(*rows[i * 2 + 1][j])
             write("▀")
         row += 1
         move(column, row)
@@ -260,11 +260,14 @@ def ensure_tuple(value):
 
 
 def run(setup, loop, fps=30):
-    init()
-    state = ensure_tuple(setup())
-    while True:
-        clear()
-        keys = keypresses()
-        state = ensure_tuple(loop(keys, *state))
-        flush()
-        time.sleep(1 / fps)
+    try:
+        init()
+        state = ensure_tuple(setup())
+        while True:
+            clear()
+            keys = keypresses()
+            state = ensure_tuple(loop(keys, *state))
+            flush()
+            time.sleep(1 / fps)
+    finally:
+        restore()
