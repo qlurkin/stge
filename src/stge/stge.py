@@ -5,6 +5,7 @@ import time
 import threading
 import queue
 from dataclasses import dataclass, field
+import atexit
 
 
 @dataclass
@@ -15,6 +16,10 @@ class StgeState:
     frame_buffer: list[str] = field(default_factory=list)
     keys: list[str] = field(default_factory=list)
     char_queue: queue.Queue = field(default_factory=queue.Queue)
+
+
+class NoKey(Exception):
+    pass
 
 
 _state = StgeState()
@@ -100,10 +105,6 @@ def input_thread():
             _state.char_queue.put(ch)
 
 
-class NoKey(Exception):
-    pass
-
-
 def read_key():
     try:
         ch = _state.char_queue.get_nowait()
@@ -128,11 +129,6 @@ def write(msg):
 
 def clear():
     write("\033[2J\033[H")
-
-
-def size():
-    size = shutil.get_terminal_size()
-    return size.columns, size.lines
 
 
 def move(column, row):
@@ -236,6 +232,11 @@ def pixels(rows, column=0, row=0):
     reset()
 
 
+def size():
+    size = shutil.get_terminal_size()
+    return size.columns, size.lines
+
+
 def init(fps):
     _state.frame_time_target = 1 / fps
 
@@ -243,6 +244,7 @@ def init(fps):
 
     write("\033[?25l")
     enter_raw()
+    atexit.register(_restore)
     flush()
 
 
@@ -253,7 +255,6 @@ def _restore():
 
 
 def quit():
-    _restore()
     sys.exit()
 
 
@@ -298,12 +299,9 @@ def ensure_tuple(value):
 
 
 def run(setup, loop, fps=30):
-    try:
-        init(fps)
-        state = ensure_tuple(setup())
-        while True:
-            begin_frame()
-            state = ensure_tuple(loop(*state))
-            end_frame()
-    finally:
-        _restore()
+    init(fps)
+    state = ensure_tuple(setup())
+    while True:
+        begin_frame()
+        state = ensure_tuple(loop(*state))
+        end_frame()
