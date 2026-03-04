@@ -21,9 +21,11 @@ from .stge import (
     reset_strikethrough,
     reset,
     init,
-    restore,
     quit,
     pixels,
+    delta_time,
+    begin_frame,
+    end_frame,
 )
 
 __all__ = [
@@ -49,7 +51,9 @@ __all__ = [
     "reset_strikethrough",
     "reset",
     "init",
-    "restore",
     "quit",
     "pixels",
+    "delta_time",
+    "begin_frame",
+    "end_frame",
 ]

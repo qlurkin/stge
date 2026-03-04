@@ -4,9 +4,20 @@ import platform
 import time
 import threading
 import queue
+from dataclasses import dataclass, field
 
-_char_queue = queue.Queue()
 
+@dataclass
+class StgeState:
+    frame_time_target: float = 0.0
+    delta_time: float = 0.0
+    frame_start: float = 0.0
+    frame_buffer: list[str] = field(default_factory=list)
+    keys: list[str] = field(default_factory=list)
+    char_queue: queue.Queue = field(default_factory=queue.Queue)
+
+
+_state = StgeState()
 
 IS_WINDOWS = platform.system() == "Windows"
 
@@ -86,7 +97,7 @@ def input_thread():
     while True:
         ch = getch()
         if len(ch) > 0:
-            _char_queue.put(ch)
+            _state.char_queue.put(ch)
 
 
 class NoKey(Exception):
@@ -95,9 +106,9 @@ class NoKey(Exception):
 
 def read_key():
     try:
-        ch = _char_queue.get_nowait()
+        ch = _state.char_queue.get_nowait()
         if ch == "SIGINT":
-            restore()
+            _restore()
             raise KeyboardInterrupt
         return ch
     except queue.Empty:
@@ -105,11 +116,14 @@ def read_key():
 
 
 def flush():
+    frame = "".join(_state.frame_buffer)
+    _state.frame_buffer.clear()
+    sys.stdout.write(frame)
     sys.stdout.flush()
 
 
 def write(msg):
-    sys.stdout.write(msg)
+    _state.frame_buffer.append(str(msg))
 
 
 def clear():
@@ -222,25 +236,28 @@ def pixels(rows, column=0, row=0):
     reset()
 
 
-def init():
+def init(fps):
+    _state.frame_time_target = 1 / fps
+
     threading.Thread(target=input_thread, daemon=True).start()
+
     write("\033[?25l")
     enter_raw()
     flush()
 
 
-def restore():
+def _restore():
     exit_raw()
     write("\033[?25h")
     flush()
 
 
 def quit():
-    restore()
+    _restore()
     sys.exit()
 
 
-def keypresses():
+def _keypresses():
     res = []
     while True:
         try:
@@ -249,6 +266,27 @@ def keypresses():
         except NoKey:
             break
     return res
+
+
+def keypresses():
+    return _state.keys
+
+
+def begin_frame():
+    _state.frame_start = time.perf_counter()
+    _state.keys = _keypresses()
+    clear()
+
+
+def end_frame():
+    flush()
+    remaining = _state.frame_time_target - (time.perf_counter() - _state.frame_start)
+    time.sleep(remaining)
+    _state.delta_time = time.perf_counter() - _state.frame_start
+
+
+def delta_time():
+    return _state.delta_time
 
 
 def ensure_tuple(value):
@@ -261,13 +299,11 @@ def ensure_tuple(value):
 
 def run(setup, loop, fps=30):
     try:
-        init()
+        init(fps)
         state = ensure_tuple(setup())
         while True:
-            clear()
-            keys = keypresses()
-            state = ensure_tuple(loop(keys, *state))
-            flush()
-            time.sleep(1 / fps)
+            begin_frame()
+            state = ensure_tuple(loop(*state))
+            end_frame()
     finally:
-        restore()
+        _restore()

@@ -189,8 +189,8 @@ def rotate_ccw(piece):
     return di, dj, piece
 
 
-def loop(keys, board, piece, index):
-    for key in keys:
+def loop(board, piece, index):
+    for key in stge.keypresses():
         if key == "q":
             stge.quit()
 
