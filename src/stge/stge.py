@@ -282,7 +282,8 @@ def begin_frame():
 def end_frame():
     flush()
     remaining = _state.frame_time_target - (time.perf_counter() - _state.frame_start)
-    time.sleep(remaining)
+    if remaining > 0:
+        time.sleep(remaining)
     _state.delta_time = time.perf_counter() - _state.frame_start
 
 
