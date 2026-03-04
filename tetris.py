@@ -108,15 +108,6 @@ def render_piece(index):
     return 0, 3, res
 
 
-def setup():
-    board: list[list[None | tuple]] = [[None for j in range(10)] for i in range(22)]
-
-    index = random.randrange(7)
-    piece = render_piece(index)
-
-    return board, piece, index
-
-
 def render_board(board, piece):
     di, dj, piece = piece
 
@@ -189,17 +180,34 @@ def rotate_ccw(piece):
     return di, dj, piece
 
 
+def setup():
+    board: list[list[None | tuple]] = [[None for j in range(10)] for i in range(22)]
+
+    index = random.randrange(7)
+    piece = render_piece(index)
+
+    return board, piece, index
+
+
 def loop(board, piece, index):
     for key in stge.keypresses():
-        if key == "q":
+        if key == "q" or key == "Q":
             stge.quit()
 
         if key == "n":
             index = (index + 1) % 7
             piece = render_piece(index)
 
-        if key == "UP":
+        if key == "UP" or key == "c" or key == "SPACE":
             rot = rotate_cw(piece)
+            for dc, dr in WALL_KICKS:
+                nxt = move(rot, dr, dc)
+                if not collide(board, nxt):
+                    piece = nxt
+                    break
+
+        if key == "x":
+            rot = rotate_ccw(piece)
             for dc, dr in WALL_KICKS:
                 nxt = move(rot, dr, dc)
                 if not collide(board, nxt):
