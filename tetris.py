@@ -180,62 +180,129 @@ def rotate_ccw(piece):
     return di, dj, piece
 
 
+def check_for_lines(board):
+    lines = []
+    for r in range(len(board)):
+        count = 0
+        for elem in board[r]:
+            if elem is None:
+                count += 1
+        if count == 0:
+            lines.append(r)
+    return lines
+
+
+def explosion(board, lines, progression):
+    v = int(progression * 255)
+    vv = int(v * progression)
+    color = (v, vv, vv)
+    for r in lines:
+        for c in range(len(board[r])):
+            board[r][c] = color
+
+
+def collapse_lines(board, lines):
+    new = []
+    n = len(lines)
+    for _ in range(n):
+        new.append([None for _ in range(len(board[0]))])
+
+    for r in range(len(board)):
+        if r not in lines:
+            new.append(board[r])
+
+    return new
+
+
+def down(board, piece, lines, progression, index):
+    nxt = move(piece)
+    if collide(board, nxt):
+        burn_piece_to_board(board, piece)
+        lines = check_for_lines(board)
+        if len(lines) > 0:
+            progression = 20
+        index = random.randrange(7)
+        piece = render_piece(index)
+    else:
+        piece = nxt
+
+    return board, piece, lines, progression, index
+
+
 def setup():
     board: list[list[None | tuple]] = [[None for j in range(10)] for i in range(22)]
 
     index = random.randrange(7)
     piece = render_piece(index)
+    lines = []
+    progression = 0
+    score = 0
+    step_time = 1.0
+    step = step_time
 
-    return board, piece, index
+    return board, piece, index, lines, progression, score, step_time, step
 
 
-def loop(board, piece, index):
-    for key in stge.keypresses():
-        if key == "q" or key == "Q":
-            stge.quit()
+def loop(board, piece, index, lines, progression, score, step_time, step):
+    if len(lines) > 0:
+        if progression > 0:
+            explosion(board, lines, progression / 20)
+            progression -= 1
+        else:
+            board = collapse_lines(board, lines)
+            lines = []
 
-        if key == "n":
-            index = (index + 1) % 7
-            piece = render_piece(index)
+    else:
+        dt = stge.delta_time()
+        step -= dt
+        if step < 0:
+            step = step_time
+            board, piece, lines, progression, index = down(
+                board, piece, lines, progression, index
+            )
 
-        if key == "UP" or key == "c" or key == "SPACE":
-            rot = rotate_cw(piece)
-            for dc, dr in WALL_KICKS:
-                nxt = move(rot, dr, dc)
-                if not collide(board, nxt):
-                    piece = nxt
-                    break
+        for key in stge.keypresses():
+            if key == "q" or key == "Q":
+                stge.quit()
 
-        if key == "x":
-            rot = rotate_ccw(piece)
-            for dc, dr in WALL_KICKS:
-                nxt = move(rot, dr, dc)
-                if not collide(board, nxt):
-                    piece = nxt
-                    break
-
-        if key == "RIGHT":
-            nxt = move(piece, 0, 1)
-            if not collide(board, nxt):
-                piece = nxt
-
-        if key == "LEFT":
-            nxt = move(piece, 0, -1)
-            if not collide(board, nxt):
-                piece = nxt
-
-        if key == "DOWN":
-            nxt = move(piece)
-            if collide(board, nxt):
-                burn_piece_to_board(board, piece)
-                index = random.randrange(7)
+            if key == "n":
+                index = (index + 1) % 7
                 piece = render_piece(index)
-            else:
-                piece = nxt
+
+            if key == "UP" or key == "c" or key == "SPACE":
+                rot = rotate_cw(piece)
+                for dc, dr in WALL_KICKS:
+                    nxt = move(rot, dr, dc)
+                    if not collide(board, nxt):
+                        piece = nxt
+                        break
+
+            if key == "x":
+                rot = rotate_ccw(piece)
+                for dc, dr in WALL_KICKS:
+                    nxt = move(rot, dr, dc)
+                    if not collide(board, nxt):
+                        piece = nxt
+                        break
+
+            if key == "RIGHT":
+                nxt = move(piece, 0, 1)
+                if not collide(board, nxt):
+                    piece = nxt
+
+            if key == "LEFT":
+                nxt = move(piece, 0, -1)
+                if not collide(board, nxt):
+                    piece = nxt
+
+            if key == "DOWN":
+                board, piece, lines, progression, index = down(
+                    board, piece, lines, progression, index
+                )
 
     stge.pixels(render_board(board, piece))
 
-    return board, piece, index
+    return board, piece, index, lines, progression, score, step_time, step
 
 
 stge.run(setup, loop)
