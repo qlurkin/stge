@@ -94,7 +94,7 @@ def adjust_luminosity(rgb, percent):
     )
 
 
-def render_piece(index):
+def get_piece(index):
     piece = PIECES[index]
     color = COLORS[index]
     res = []
@@ -137,6 +137,22 @@ def render_board(board, piece):
                     pixels[r * 2][c * 2 + 1] = piece[i][j]
                     pixels[r * 2 + 1][c * 2 + 1] = piece[i][j]
 
+    return pixels
+
+
+def render_piece(piece):
+    pixels = [
+        [(0, 0, 0) for j in range(len(piece[0]) * 2)] for i in range(len(piece) * 2)
+    ]
+
+    for r in range(4):
+        for c in range(4):
+            if piece[r][c] is not None:
+                if r >= 0:
+                    pixels[r * 2][c * 2] = piece[r][c]
+                    pixels[r * 2 + 1][c * 2] = piece[r][c]
+                    pixels[r * 2][c * 2 + 1] = piece[r][c]
+                    pixels[r * 2 + 1][c * 2 + 1] = piece[r][c]
     return pixels
 
 
@@ -192,73 +208,102 @@ def check_for_lines(board):
     return lines
 
 
-def explosion(board, lines, progression):
+def explosion(board, full_lines, progression):
     v = int(progression * 255)
     vv = int(v * progression)
     color = (v, vv, vv)
-    for r in lines:
+    for r in full_lines:
         for c in range(len(board[r])):
             board[r][c] = color
 
 
-def collapse_lines(board, lines):
+def collapse_lines(board, full_lines):
     new = []
-    n = len(lines)
+    n = len(full_lines)
     for _ in range(n):
         new.append([None for _ in range(len(board[0]))])
 
     for r in range(len(board)):
-        if r not in lines:
+        if r not in full_lines:
             new.append(board[r])
 
     return new
 
 
-def down(board, piece, lines, progression, index):
+def down(board, piece, full_lines, progression, index, next_piece):
     nxt = move(piece)
     if collide(board, nxt):
         burn_piece_to_board(board, piece)
-        lines = check_for_lines(board)
-        if len(lines) > 0:
+        full_lines = check_for_lines(board)
+        if len(full_lines) > 0:
             progression = 20
+        piece = next_piece
         index = random.randrange(7)
-        piece = render_piece(index)
+        next_piece = get_piece(index)
     else:
         piece = nxt
 
-    return board, piece, lines, progression, index
+    return board, piece, full_lines, progression, index, next_piece
 
 
 def setup():
     board: list[list[None | tuple]] = [[None for j in range(10)] for i in range(22)]
 
     index = random.randrange(7)
-    piece = render_piece(index)
-    lines = []
+    piece = get_piece(index)
+    index = random.randrange(7)
+    next_piece = get_piece(index)
+    full_lines = []
     progression = 0
     score = 0
-    step_time = 1.0
-    step = step_time
+    step = 0.89
+    lines = 0
 
-    return board, piece, index, lines, progression, score, step_time, step
+    return board, piece, index, full_lines, progression, score, step, lines, next_piece
 
 
-def loop(board, piece, index, lines, progression, score, step_time, step):
-    if len(lines) > 0:
+def loop(state):
+    board, piece, index, full_lines, progression, score, step, lines, next_piece = state
+
+    if len(full_lines) > 0:
         if progression > 0:
-            explosion(board, lines, progression / 20)
+            explosion(board, full_lines, progression / 20)
             progression -= 1
         else:
-            board = collapse_lines(board, lines)
-            lines = []
+            board = collapse_lines(board, full_lines)
+            score += [40, 100, 300, 1200][len(full_lines)] * (lines // 10 + 1)
+            lines += len(full_lines)
+            full_lines = []
 
     else:
         dt = stge.delta_time()
         step -= dt
         if step < 0:
-            step = step_time
-            board, piece, lines, progression, index = down(
-                board, piece, lines, progression, index
+            step = [
+                0.89,
+                0.82,
+                0.75,
+                0.69,
+                0.62,
+                0.55,
+                0.47,
+                0.37,
+                0.28,
+                0.18,
+                0.17,
+                0.15,
+                0.13,
+                0.12,
+                0.10,
+                0.10,
+                0.08,
+                0.08,
+                0.07,
+                0.07,
+                0.05,
+            ][min(lines // 10, 20)]
+            board, piece, full_lines, progression, index, next_piece = down(
+                board, piece, full_lines, progression, index, next_piece
             )
 
         for key in stge.keypresses():
@@ -267,7 +312,7 @@ def loop(board, piece, index, lines, progression, score, step_time, step):
 
             if key == "n":
                 index = (index + 1) % 7
-                piece = render_piece(index)
+                piece = get_piece(index)
 
             if key == "UP" or key == "c" or key == "SPACE":
                 rot = rotate_cw(piece)
@@ -296,13 +341,18 @@ def loop(board, piece, index, lines, progression, score, step_time, step):
                     piece = nxt
 
             if key == "DOWN":
-                board, piece, lines, progression, index = down(
-                    board, piece, lines, progression, index
+                board, piece, full_lines, progression, index, next_piece = down(
+                    board, piece, full_lines, progression, index, next_piece
                 )
 
     stge.pixels(render_board(board, piece))
+    stge.write_at(24, 2, f"Level: {lines // 10}")
+    stge.write_at(24, 3, f"Lines: {lines}")
+    stge.write_at(24, 4, f"Score: {score}")
+    stge.write_at(24, 5, "Next:")
+    stge.pixels(render_piece(next_piece[2]), 24, 6)
 
-    return board, piece, index, lines, progression, score, step_time, step
+    return board, piece, index, full_lines, progression, score, step, lines, next_piece
 
 
 stge.run(setup, loop)
