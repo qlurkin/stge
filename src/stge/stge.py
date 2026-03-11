@@ -16,6 +16,8 @@ class StgeState:
     frame_buffer: list[str] = field(default_factory=list)
     keys: list[str] = field(default_factory=list)
     char_queue: queue.Queue = field(default_factory=queue.Queue)
+    input_thread: threading.Thread | None = None
+    input_thread_exception: Exception | None = None
 
 
 class NoKey(Exception):
@@ -99,17 +101,19 @@ else:
 
 
 def input_thread():
-    while True:
-        ch = getch()
-        if len(ch) > 0:
-            _state.char_queue.put(ch)
+    try:
+        while True:
+            ch = getch()
+            if len(ch) > 0:
+                _state.char_queue.put(ch)
+    except Exception as e:
+        _state.input_thread_exception = e
 
 
 def read_key():
     try:
         ch = _state.char_queue.get_nowait()
         if ch == "SIGINT":
-            _restore()
             raise KeyboardInterrupt
         return ch
     except queue.Empty:
@@ -237,14 +241,22 @@ def size():
     return size.columns, size.lines
 
 
+def _exception_hook(exc_type, exc_value, exc_traceback):
+    clear()
+    _restore()
+    sys.__excepthook__(exc_type, exc_value, exc_traceback)
+
+
 def init(fps):
     _state.frame_time_target = 1 / fps
 
-    threading.Thread(target=input_thread, daemon=True).start()
+    _state.input_thread = threading.Thread(target=input_thread, daemon=True)
+    _state.input_thread.start()
 
     write("\033[?25l")
     enter_raw()
     atexit.register(_restore)
+    sys.excepthook = _exception_hook
     flush()
 
 
@@ -274,6 +286,12 @@ def keypresses():
 
 
 def begin_frame():
+    assert _state.input_thread is not None, "init() must be called before begin_frame()"
+    if not _state.input_thread.is_alive():
+        if _state.input_thread_exception is not None:
+            raise _state.input_thread_exception
+        else:
+            raise Exception("Input Thread Crached")
     _state.frame_start = time.perf_counter()
     _state.keys = _keypresses()
     clear()
@@ -291,18 +309,10 @@ def delta_time():
     return _state.delta_time
 
 
-def ensure_tuple(value):
-    if not isinstance(value, tuple):
-        if value is not None:
-            return (value,)
-        return tuple()
-    return value
-
-
 def run(setup, loop, fps=30):
     init(fps)
-    state = ensure_tuple(setup())
+    state = setup()
     while True:
         begin_frame()
-        state = ensure_tuple(loop(*state))
+        state = loop(state)
         end_frame()
