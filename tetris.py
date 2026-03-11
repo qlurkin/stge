@@ -296,7 +296,7 @@ def loop(state):
             progression -= 1
         else:
             board = collapse_lines(board, full_lines)
-            score += [40, 100, 300, 1200][len(full_lines)] * (lines // 10 + 1)
+            score += [40, 100, 300, 1200][len(full_lines) - 1] * (lines // 10 + 1)
             lines += len(full_lines)
             full_lines = []
 
