@@ -230,7 +230,7 @@ def collapse_lines(board, full_lines):
     return new
 
 
-def down(board, piece, full_lines, progression, index, next_piece):
+def down(board, piece, full_lines, progression, index, next_piece, over):
     nxt = move(piece)
     if collide(board, nxt):
         burn_piece_to_board(board, piece)
@@ -240,10 +240,12 @@ def down(board, piece, full_lines, progression, index, next_piece):
         piece = next_piece
         index = random.randrange(7)
         next_piece = get_piece(index)
+        if collide(board, piece):
+            over = True
     else:
         piece = nxt
 
-    return board, piece, full_lines, progression, index, next_piece
+    return board, piece, full_lines, progression, index, next_piece, over
 
 
 def setup():
@@ -258,12 +260,35 @@ def setup():
     score = 0
     step = 0.89
     lines = 0
+    over = False
 
-    return board, piece, index, full_lines, progression, score, step, lines, next_piece
+    return (
+        board,
+        piece,
+        index,
+        full_lines,
+        progression,
+        score,
+        step,
+        lines,
+        next_piece,
+        over,
+    )
 
 
 def loop(state):
-    board, piece, index, full_lines, progression, score, step, lines, next_piece = state
+    (
+        board,
+        piece,
+        index,
+        full_lines,
+        progression,
+        score,
+        step,
+        lines,
+        next_piece,
+        over,
+    ) = state
 
     if len(full_lines) > 0:
         if progression > 0:
@@ -277,7 +302,8 @@ def loop(state):
 
     else:
         dt = stge.delta_time()
-        step -= dt
+        if not over:
+            step -= dt
         if step < 0:
             step = [
                 0.89,
@@ -302,17 +328,13 @@ def loop(state):
                 0.07,
                 0.05,
             ][min(lines // 10, 20)]
-            board, piece, full_lines, progression, index, next_piece = down(
-                board, piece, full_lines, progression, index, next_piece
+            board, piece, full_lines, progression, index, next_piece, over = down(
+                board, piece, full_lines, progression, index, next_piece, over
             )
 
         for key in stge.keypresses():
             if key == "q" or key == "Q":
                 stge.quit()
-
-            if key == "n":
-                index = (index + 1) % 7
-                piece = get_piece(index)
 
             if key == "UP" or key == "c" or key == "SPACE":
                 rot = rotate_cw(piece)
@@ -341,18 +363,40 @@ def loop(state):
                     piece = nxt
 
             if key == "DOWN":
-                board, piece, full_lines, progression, index, next_piece = down(
-                    board, piece, full_lines, progression, index, next_piece
-                )
+                if not over:
+                    board, piece, full_lines, progression, index, next_piece, over = (
+                        down(
+                            board,
+                            piece,
+                            full_lines,
+                            progression,
+                            index,
+                            next_piece,
+                            over,
+                        )
+                    )
 
     stge.pixels(render_board(board, piece))
+    if over:
+        stge.write_at(4, 10, "[Game  Over]")
     stge.write_at(24, 2, f"Level: {lines // 10}")
     stge.write_at(24, 3, f"Lines: {lines}")
     stge.write_at(24, 4, f"Score: {score}")
     stge.write_at(24, 5, "Next:")
     stge.pixels(render_piece(next_piece[2]), 24, 6)
 
-    return board, piece, index, full_lines, progression, score, step, lines, next_piece
+    return (
+        board,
+        piece,
+        index,
+        full_lines,
+        progression,
+        score,
+        step,
+        lines,
+        next_piece,
+        over,
+    )
 
 
 stge.run(setup, loop)
