@@ -1,7 +1,8 @@
 import stge
 
 
-def loop(keys, out):
+def loop(out):
+    keys = stge.keypresses()
     if "q" in keys or "Q" in keys:
         stge.quit()
     if len(keys) > 0:
