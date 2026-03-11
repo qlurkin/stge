@@ -1,7 +1,6 @@
 from .stge import (
     run,
     keypresses,
-    flush,
     write,
     write_at,
     clear,
@@ -31,7 +30,6 @@ from .stge import (
 __all__ = [
     "run",
     "keypresses",
-    "flush",
     "write",
     "write_at",
     "clear",
