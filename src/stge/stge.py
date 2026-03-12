@@ -141,7 +141,7 @@ def write(msg: Any):
 
 def clear():
     """Clear the terminal"""
-    write("\033[2J\033[H")
+    write("\033[3J\033[2J\033[H")
 
 
 def move(column: int, row: int):
