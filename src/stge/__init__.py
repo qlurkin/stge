@@ -25,6 +25,10 @@ from .stge import (
     delta_time,
     begin_frame,
     end_frame,
+    ### API ###
+    Surface,
+    Rect,
+    Vector2
 )
 
 __all__ = [
@@ -54,4 +58,8 @@ __all__ = [
     "delta_time",
     "begin_frame",
     "end_frame",
+    ### API ###
+    "Surface",
+    "Rect",
+    "Vector2"
 ]
