@@ -134,9 +134,12 @@ class Vector2:
 
 
 class Surface:
-    def __init__(self, w: int, h: int):
-        self.surface = self.init(w, h)
-        self.refresh()
+    """Helper class to manage a 2D array of pixels.
+    Surfaces manages their own storage and keep references to that storage valid.
+    """
+
+    def __init__(self, w: int, h: int, color: tuple[int, int, int] = (0, 0, 0)):
+        self.surface = [[color for column in range(w)] for line in range(h)]
 
     @property
     def w(self) -> int:
@@ -146,62 +149,48 @@ class Surface:
     def h(self) -> int:
         return len(self.surface)
 
-    def init(self, width, height) -> list[list[tuple[int, int, int]]]:
-        return [[(0, 0, 0)] * width for line in range(height)]
+    def __setitem__(self, index: tuple[int, int], value: tuple[int, int, int]):
+        """Put a color at a specific coordinate (x, y)"""
+        column, line = index
+        self.surface[line][column] = value
 
-    def refresh(self) -> None:
-        """Permet de set la surface au noir ( reset )"""
-        self.surface = [[(0, 0, 0)] * self.w for _ in range(self.h)]
+    def fill(self, color: tuple[int, int, int]):
+        """Fill the surface with a color"""
+        for line in range(self.h):
+            for column in range(self.w):
+                self[column, line] = color
 
-    def fill(self, color: tuple[int, int, int]) -> None:
-        """Remplie la surface d'une couleur donner en int ( ref au dico des couleurs )"""
-        self.surface = [[color] * self.w for _ in range(self.h)]
-
-    def load(self, image: list[list[tuple[int, int, int]]]) -> None:
-        """Permet de charger un image ( list de list ) ! FORME RECTANGULAIRE !"""
-        # Verification de l'image
-        if not image:
-            return
-        if not image[0]:
-            return
-        if type(image[0][0]) != int:
-            return
-
-        # Verification de l'image de la forme
-        len_line = len(image[0])
-        for line in image:
-            lenght = len(line)
-            if lenght != len_line:
-                return
-
-        # Au cas ou l'image est un tuple
-        self.surface = [list(line) for line in image]
-        # Update taille de la surface
-        self.h = len(self.surface)
-        self.w = len(self.surface[0]) if self.h > 0 else 0
+    @staticmethod
+    def load(pixels: list[list[tuple[int, int, int]]]) -> Surface:
+        """Create a new Surface and copy `pixels` into it"""
+        surface = Surface(len(pixels[0]), len(pixels))
+        for line in range(len(surface.surface)):
+            surface.surface[line][:] = pixels[line]
+        return surface
 
     def blit(self, surface: Surface, rect_s: Rect) -> None:
-        """Dessiner une Surface sur soit"""
+        """Draw another Surface onto this one"""
         dest_rect = self.get_rect()
-        # Verifiaction si les surface se superpose
+
+        # Check if Surfaces overlap
         if not dest_rect.collide(rect_s):
             return
 
-        # Calcul de debut et fin de la zone de superposition
+        # Compute overlaping region
         dest_x_start = max(0, rect_s.x)
         dest_y_start = max(0, rect_s.y)
         dest_x_end = min(self.w, rect_s.x + rect_s.w)
         dest_y_end = min(self.h, rect_s.y + rect_s.h)
 
-        # Calcul de la longeur et largueur de la zone
+        # Compute overlaping region dimensions
         draw_w = dest_x_end - dest_x_start
         draw_h = dest_y_end - dest_y_start
 
-        # Calcul du debut du slicing de la source
+        # Compute source start indices
         src_x_start = dest_x_start - rect_s.x
         src_y_start = dest_y_start - rect_s.y
 
-        # Copie par Slicing
+        # Copy
         for y in range(draw_h):
             d_y = dest_y_start + y
             s_y = src_y_start + y
@@ -211,10 +200,11 @@ class Surface:
             ]
 
     def get_pixels(self) -> list[list[tuple[int, int, int]]]:
+        """Get a reference to this surface pixels. This reference will remain valid."""
         return self.surface
 
     def get_rect(self) -> Rect:
-        """Renvoi le rect de la Surface"""
+        """Returns the Rect of the Surface"""
         return Rect(0, 0, self.w, self.h)
 
 
