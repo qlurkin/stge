@@ -376,14 +376,14 @@ def loop(state):
                         )
                     )
 
-    stge.pixels(render_board(board, piece))
+    stge.write_at(0, 0, ("#" * 37 + "\n\r") * 22, fg=(150, 150, 150))
+    stge.pixels(render_board(board, piece), 1, 1)
     if over:
         stge.write_at(4, 10, "[Game  Over]")
-    stge.write_at(24, 2, f"Level: {lines // 10}")
-    stge.write_at(24, 3, f"Lines: {lines}")
-    stge.write_at(24, 4, f"Score: {score}")
-    stge.write_at(24, 5, "Next:")
-    stge.pixels(render_piece(next_piece[2]), 24, 6)
+    stge.write_at(24, 2, f" Level: {lines // 10} ")
+    stge.write_at(24, 3, f" Lines: {lines} ")
+    stge.write_at(24, 4, f" Score: {score} ")
+    stge.pixels(render_piece(next_piece[2]), 25, 16)
 
     return (
         board,
