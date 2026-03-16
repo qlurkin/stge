@@ -1,3 +1,4 @@
+from __future__ import annotations
 import sys
 import shutil
 import platform
@@ -83,7 +84,7 @@ class Rect:
     def right(self, value: float):
         self.x = int(value) - self.w
 
-    def collide(self, rect: Self) -> bool:
+    def collide(self, rect: Rect) -> bool:
         """Test collision with another Rect"""
 
         on_x = self.left < rect.right and self.right > rect.left
@@ -93,24 +94,43 @@ class Rect:
 
 
 class Vector2:
-    def __init__(self, x: int | float, y: int | float):
+    def __init__(self, x: float, y: float):
         self.x = x
         self.y = y
 
     @property
-    def xy(self) -> tuple[int, int]:
+    def xy(self) -> tuple[float, float]:
+        """Returns the vector as a tuple"""
         return (self.x, self.y)
 
     @xy.setter
-    def xy(self, value: tuple[int, int]):
+    def xy(self, value: tuple[float, float]):
+        """Unpack from a tuple"""
         self.x, self.y = value
 
-    def distance_to(self, vector: "Vector2") -> int:
-        """Renvoie la distance entre soit et un autre Vector2"""
-        dx, dy = vector.x - self.x, vector.y - self.y
-        distance = int(((dx**2) + (dy**2)) ** (1 / 2))
+    def __add__(self, other: Vector2) -> Vector2:
+        return Vector2(self.x + other.x, self.y + other.y)
 
-        return distance
+    def __sub__(self, other: Vector2) -> Vector2:
+        return Vector2(self.x - other.x, self.y - other.y)
+
+    def __mul__(self, other: float) -> Vector2:
+        return Vector2(self.x * other, self.y * other)
+
+    def __truediv__(self, other: float) -> Vector2:
+        return Vector2(self.x / other, self.y / other)
+
+    def length(self) -> float:
+        """Returns the length of the vector"""
+        return (self.x**2 + self.y**2) ** (1 / 2)
+
+    def distance_to(self, vector: Self) -> float:
+        """Returns the distance to another vector"""
+        return (vector - self).length()
+
+    def normalize(self):
+        """Returns the normalized vector"""
+        return self / self.length()
 
 
 class Surface:
