@@ -26,124 +26,131 @@ class NoKey(Exception):
 
 
 class Rect:
-
-    def __init__( self, x: int, y: int, w: int, h: int ):
+    def __init__(self, x: int, y: int, w: int, h: int):
         self.x = int(x)
         self.y = int(y)
         self.w = int(w)
         self.h = int(h)
-    
 
     @property
-    def topleft(self) : return self.x, self.y
+    def topleft(self):
+        return self.x, self.y
 
     @topleft.setter
-    def topleft(self, value) : self.x, self.y = round(value[0]), round(value[1])
+    def topleft(self, value):
+        self.x, self.y = round(value[0]), round(value[1])
 
     @property
-    def center(self) -> tuple[int, int] : return int(self.x + self.w / 2), int(self.y + self.h / 2)
+    def center(self) -> tuple[int, int]:
+        return int(self.x + self.w / 2), int(self.y + self.h / 2)
 
     @center.setter
-    def center(self, value: tuple[int, int]) : self.x, self.y = value[0] - int(self.w / 2), value[1] - int(self.h / 2) 
-    
+    def center(self, value: tuple[int, int]):
+        self.x, self.y = value[0] - int(self.w / 2), value[1] - int(self.h / 2)
+
     @property
-    def top(self) -> int: return self.y
+    def top(self) -> int:
+        return self.y
 
     @top.setter
-    def top(self, value) : self.y = value
+    def top(self, value):
+        self.y = value
 
     @property
-    def bottom(self) -> int : return self.y + self.h
+    def bottom(self) -> int:
+        return self.y + self.h
 
     @bottom.setter
-    def bottom(self, value) : self.y = value - self.h
+    def bottom(self, value):
+        self.y = value - self.h
 
     @property
-    def left(self) -> int: return self.x
+    def left(self) -> int:
+        return self.x
 
     @left.setter
-    def left(self, value) : self.x = value
+    def left(self, value):
+        self.x = value
 
     @property
-    def right(self) -> int: return self.x + self.w
+    def right(self) -> int:
+        return self.x + self.w
 
     @right.setter
-    def right(self, value) : self.x = value - self.w
-
+    def right(self, value):
+        self.x = value - self.w
 
     def collide(self, rect: "Rect") -> bool:
-        ''' Renvoi si collision avec un autre Rect'''
-        
+        """Renvoi si collision avec un autre Rect"""
+
         on_x = self.left < rect.right and self.right > rect.left
         on_y = self.top < rect.bottom and self.bottom > rect.top
-        
+
         return on_x and on_y
-        
+
 
 class Vector2:
-
-    def __init__( self , x: int | float, y: int| float ):
+    def __init__(self, x: int | float, y: int | float):
         self.x = x
         self.y = y
 
-
     @property
-    def xy(self) -> tuple[int, int]: return (self.x, self.y)
-    
+    def xy(self) -> tuple[int, int]:
+        return (self.x, self.y)
 
     @xy.setter
-    def xy(self, value: tuple[int, int]): self.x, self.y = value
-
+    def xy(self, value: tuple[int, int]):
+        self.x, self.y = value
 
     def distance_to(self, vector: "Vector2") -> int:
-        ''' Renvoie la distance entre soit et un autre Vector2 '''
+        """Renvoie la distance entre soit et un autre Vector2"""
         dx, dy = vector.x - self.x, vector.y - self.y
-        distance = int(((dx ** 2) + (dy ** 2)) ** (1/2))
+        distance = int(((dx**2) + (dy**2)) ** (1 / 2))
 
         return distance
 
 
 class Surface:
-
     _COLORS = {
-        0 : ( 0, 0, 0 ), # Black
-        1 : (255, 0, 0), # Red
-        2 : (0, 0, 255), # Green
-        3 : (0, 255, 0)  # Blue
+        0: (0, 0, 0),  # Black
+        1: (255, 0, 0),  # Red
+        2: (0, 0, 255),  # Green
+        3: (0, 255, 0),  # Blue
     }
 
     def __init__(self, w: int, h: int):
         self.surface = self.init(w, h)
         self.refresh()
-    
-    @property
-    def w(self) -> int: return len(self.surface[0])
 
     @property
-    def h(self) -> int: return len(self.surface)
+    def w(self) -> int:
+        return len(self.surface[0])
 
+    @property
+    def h(self) -> int:
+        return len(self.surface)
 
     def init(self, width, height) -> list[list[int]]:
-        return [[ 0 ] * width for line in range(height) ]
-    
-    
+        return [[0] * width for line in range(height)]
+
     def refresh(self) -> None:
-        ''' Permet de set la surface au noir ( reset ) '''
-        self.surface = [[ 0 ] * self.w  for _ in range( self.h )]
+        """Permet de set la surface au noir ( reset )"""
+        self.surface = [[0] * self.w for _ in range(self.h)]
 
+    def fill(self, color: int) -> None:
+        """Remplie la surface d'une couleur donner en int ( ref au dico des couleurs )"""
+        self.surface = [[color] * self.w for _ in range(self.h)]
 
-    def fill( self, color: int ) -> None: 
-        ''' Remplie la surface d'une couleur donner en int ( ref au dico des couleurs ) '''
-        self.surface = [[color] * self.w  for _ in range( self.h )]
-
-
-    def load( self, image: list[list[int]] ) -> None:
-        '''Permet de charger un image ( list de list ) ! FORME RECTANGULAIRE ! '''
+    def load(self, image: list[list[int]]) -> None:
+        """Permet de charger un image ( list de list ) ! FORME RECTANGULAIRE !"""
         # Verification de l'image
-        if not image : return
-        if not image[0] : return
-        if type(image[0][0]) != int : return
-        
+        if not image:
+            return
+        if not image[0]:
+            return
+        if type(image[0][0]) != int:
+            return
+
         # Verification de l'image de la forme
         len_line = len(image[0])
         for line in image:
@@ -152,24 +159,23 @@ class Surface:
                 return
 
         # Au cas ou l'image est un tuple
-        self.surface = [ list(line) for line in image ]
+        self.surface = [list(line) for line in image]
         # Update taille de la surface
         self.h = len(self.surface)
         self.w = len(self.surface[0]) if self.h > 0 else 0
 
-
     def blit(self, surface: "Surface", rect_s: Rect) -> None:
-        ''' Dessiner une Surface sur soit '''
+        """Dessiner une Surface sur soit"""
         dest_rect = self.get_rect()
         # Verifiaction si les surface se superpose
         if not dest_rect.collide(rect_s):
             return
-        
+
         # Calcul de debut et fin de la zone de superposition
         dest_x_start = max(0, rect_s.x)
         dest_y_start = max(0, rect_s.y)
-        dest_x_end   = min(self.w, rect_s.x + rect_s.w)
-        dest_y_end   = min(self.h, rect_s.y + rect_s.h)
+        dest_x_end = min(self.w, rect_s.x + rect_s.w)
+        dest_y_end = min(self.h, rect_s.y + rect_s.h)
 
         # Calcul de la longeur et largueur de la zone
         draw_w = dest_x_end - dest_x_start
@@ -184,20 +190,22 @@ class Surface:
             d_y = dest_y_start + y
             s_y = src_y_start + y
 
-            self.surface[d_y][dest_x_start : dest_x_end] = surface.surface[s_y][src_x_start : src_x_start + draw_w]
-        
-    
+            self.surface[d_y][dest_x_start:dest_x_end] = surface.surface[s_y][
+                src_x_start : src_x_start + draw_w
+            ]
+
     def flip(self) -> None:
-        ''' Permet de metre a jour notre Terminal '''
-        render_display = [ [ self._COLORS.get(x, (0,0,0)) for x in line ] for line in self.surface ]
+        """Permet de metre a jour notre Terminal"""
+        render_display = [
+            [self._COLORS.get(x, (0, 0, 0)) for x in line] for line in self.surface
+        ]
 
         pixels(render_display)
 
-    
     def get_rect(self) -> Rect:
-        ''' Renvoi le rect de la Surface '''
-        return Rect( 0, 0, self.w, self.h )
-    
+        """Renvoi le rect de la Surface"""
+        return Rect(0, 0, self.w, self.h)
+
 
 _state = StgeState()
 
