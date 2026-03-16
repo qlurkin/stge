@@ -134,13 +134,6 @@ class Vector2:
 
 
 class Surface:
-    _COLORS = {
-        0: (0, 0, 0),  # Black
-        1: (255, 0, 0),  # Red
-        2: (0, 0, 255),  # Green
-        3: (0, 255, 0),  # Blue
-    }
-
     def __init__(self, w: int, h: int):
         self.surface = self.init(w, h)
         self.refresh()
@@ -153,18 +146,18 @@ class Surface:
     def h(self) -> int:
         return len(self.surface)
 
-    def init(self, width, height) -> list[list[int]]:
-        return [[0] * width for line in range(height)]
+    def init(self, width, height) -> list[list[tuple[int, int, int]]]:
+        return [[(0, 0, 0)] * width for line in range(height)]
 
     def refresh(self) -> None:
         """Permet de set la surface au noir ( reset )"""
-        self.surface = [[0] * self.w for _ in range(self.h)]
+        self.surface = [[(0, 0, 0)] * self.w for _ in range(self.h)]
 
-    def fill(self, color: int) -> None:
+    def fill(self, color: tuple[int, int, int]) -> None:
         """Remplie la surface d'une couleur donner en int ( ref au dico des couleurs )"""
         self.surface = [[color] * self.w for _ in range(self.h)]
 
-    def load(self, image: list[list[int]]) -> None:
+    def load(self, image: list[list[tuple[int, int, int]]]) -> None:
         """Permet de charger un image ( list de list ) ! FORME RECTANGULAIRE !"""
         # Verification de l'image
         if not image:
@@ -187,7 +180,7 @@ class Surface:
         self.h = len(self.surface)
         self.w = len(self.surface[0]) if self.h > 0 else 0
 
-    def blit(self, surface: "Surface", rect_s: Rect) -> None:
+    def blit(self, surface: Surface, rect_s: Rect) -> None:
         """Dessiner une Surface sur soit"""
         dest_rect = self.get_rect()
         # Verifiaction si les surface se superpose
@@ -217,13 +210,8 @@ class Surface:
                 src_x_start : src_x_start + draw_w
             ]
 
-    def flip(self) -> None:
-        """Permet de metre a jour notre Terminal"""
-        render_display = [
-            [self._COLORS.get(x, (0, 0, 0)) for x in line] for line in self.surface
-        ]
-
-        pixels(render_display)
+    def get_pixels(self) -> list[list[tuple[int, int, int]]]:
+        return self.surface
 
     def get_rect(self) -> Rect:
         """Renvoi le rect de la Surface"""
