@@ -6,7 +6,7 @@ import threading
 import queue
 from dataclasses import dataclass, field
 import atexit
-from typing import Any, Callable
+from typing import Any, Callable, Self
 
 
 @dataclass
@@ -26,62 +26,65 @@ class NoKey(Exception):
 
 
 class Rect:
-    def __init__(self, x: int, y: int, w: int, h: int):
+    def __init__(self, x: float, y: float, w: float, h: float):
         self.x = int(x)
         self.y = int(y)
         self.w = int(w)
         self.h = int(h)
 
     @property
-    def topleft(self):
+    def topleft(self) -> tuple[int, int]:
         return self.x, self.y
 
     @topleft.setter
-    def topleft(self, value):
-        self.x, self.y = round(value[0]), round(value[1])
+    def topleft(self, value: tuple[float, float]):
+        self.x, self.y = int(value[0]), int(value[1])
 
     @property
     def center(self) -> tuple[int, int]:
         return int(self.x + self.w / 2), int(self.y + self.h / 2)
 
     @center.setter
-    def center(self, value: tuple[int, int]):
-        self.x, self.y = value[0] - int(self.w / 2), value[1] - int(self.h / 2)
+    def center(self, value: tuple[float, float]):
+        self.x, self.y = (
+            int(value[0] - self.w / 2),
+            int(value[1] - self.h / 2),
+        )
 
     @property
     def top(self) -> int:
         return self.y
 
     @top.setter
-    def top(self, value):
-        self.y = value
+    def top(self, value: float):
+        self.y = int(value)
 
     @property
     def bottom(self) -> int:
         return self.y + self.h
 
     @bottom.setter
-    def bottom(self, value):
-        self.y = value - self.h
+    def bottom(self, value: float):
+        self.y = int(value) - self.h
 
     @property
     def left(self) -> int:
         return self.x
 
     @left.setter
-    def left(self, value):
-        self.x = value
+    def left(self, value: float):
+        self.x = int(value)
 
     @property
     def right(self) -> int:
         return self.x + self.w
 
     @right.setter
-    def right(self, value):
-        self.x = value - self.w
+    def right(self, value: float):
+        self.x = int(value) - self.w
 
-    def collide(self, rect: "Rect") -> bool:
-        """Renvoi si collision avec un autre Rect"""
+    def collide(self, rect: Self) -> bool:
+        """Test collision with another Rect"""
 
         on_x = self.left < rect.right and self.right > rect.left
         on_y = self.top < rect.bottom and self.bottom > rect.top
