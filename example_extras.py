@@ -7,6 +7,14 @@ pawn = Surface(5, 5, (255, 255, 0))
 screen = Surface(80, 80)
 
 
+def clamp(x, lower, upper):
+    if x < lower:
+        return lower
+    if x > upper:
+        return upper
+    return x
+
+
 def setup():
     center = Vector2(40, 40)
     for x in range(background.w):
@@ -30,11 +38,12 @@ def loop(state):
 
     rect = pawn.get_rect()
     rect.center = x, y
-
     screen.blit(background, rect.topleft, rect)
 
     for key in stge.keypresses():
-        if key == "UP":
+        if key in ["q", "Q"]:
+            stge.quit()
+        elif key == "UP":
             y -= 1
         elif key == "DOWN":
             y += 1
@@ -42,11 +51,13 @@ def loop(state):
             x += 1
         elif key == "LEFT":
             x -= 1
-        elif key in ["q", "Q"]:
-            stge.quit()
+
+    x = clamp(x, 2, 77)
+    y = clamp(y, 2, 77)
 
     rect.center = x, y
     screen.blit(pawn, rect.topleft)
+
     stge.pixels(screen.get_pixels())
 
     return x, y
