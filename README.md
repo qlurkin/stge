@@ -13,3 +13,7 @@ pip install git+https://github.com/qlurkin/stge.git
 ```
 uv add git+https://github.com/qlurkin/stge.git
 ```
+
+## Contributors
+
+- [Lumosity23](https://github.com/Lumosity23)
