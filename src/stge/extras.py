@@ -19,13 +19,13 @@ class Rect:
 
     @property
     def center(self) -> tuple[int, int]:
-        return int(self.x + self.w / 2), int(self.y + self.h / 2)
+        return self.x + int(self.w / 2), self.y + int(self.h / 2)
 
     @center.setter
     def center(self, value: tuple[float, float]):
         self.x, self.y = (
-            int(value[0] - self.w / 2),
-            int(value[1] - self.h / 2),
+            int(value[0]) - int(self.w / 2),
+            int(value[1]) - int(self.h / 2),
         )
 
     @property
