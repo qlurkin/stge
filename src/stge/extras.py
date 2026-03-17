@@ -1,4 +1,5 @@
 from __future__ import annotations
+import stge
 
 
 class Rect:
@@ -143,35 +144,34 @@ class Surface:
             surface.surface[line][:] = pixels[line]
         return surface
 
-    def blit(self, surface: Surface, rect_s: Rect) -> None:
+    def blit(
+        self, source: Surface, dest: tuple[int, int] = (0, 0), area: Rect | None = None
+    ):
         """Draw another Surface onto this one"""
-        dest_rect = self.get_rect()
 
-        # Check if Surfaces overlap
-        if not dest_rect.collide(rect_s):
+        if area is None:
+            area = source.get_rect()
+
+        dest_rect = Rect(dest[0], dest[1], area.w, area.h)
+
+        if not dest_rect.collide(self.get_rect()):
+            stge.write_at(5, 5, "No Collide")
             return
 
-        # Compute overlaping region
-        dest_x_start = max(0, rect_s.x)
-        dest_y_start = max(0, rect_s.y)
-        dest_x_end = min(self.w, rect_s.x + rect_s.w)
-        dest_y_end = min(self.h, rect_s.y + rect_s.h)
+        dest_x_start = max(0, dest_rect.x)
+        dest_y_start = max(0, dest_rect.y)
+        dest_x_end = min(self.w, dest_rect.right)
+        dest_y_end = min(self.h, dest_rect.bottom)
 
-        # Compute overlaping region dimensions
         draw_w = dest_x_end - dest_x_start
         draw_h = dest_y_end - dest_y_start
 
-        # Compute source start indices
-        src_x_start = dest_x_start - rect_s.x
-        src_y_start = dest_y_start - rect_s.y
-
-        # Copy
         for y in range(draw_h):
             d_y = dest_y_start + y
-            s_y = src_y_start + y
+            s_y = area.y + y
 
-            self.surface[d_y][dest_x_start:dest_x_end] = surface.surface[s_y][
-                src_x_start : src_x_start + draw_w
+            self.surface[d_y][dest_x_start:dest_x_end] = source.surface[s_y][
+                area.x : area.x + draw_w
             ]
 
     def get_pixels(self) -> list[list[tuple[int, int, int]]]:
