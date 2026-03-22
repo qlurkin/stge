@@ -10,6 +10,10 @@ import atexit
 from typing import Any, Callable
 
 
+def default_loop(state):
+    return state
+
+
 @dataclass
 class StgeState:
     frame_time_target: float = 0.0
@@ -20,6 +24,7 @@ class StgeState:
     char_queue: queue.Queue = field(default_factory=queue.Queue)
     input_thread: threading.Thread | None = None
     input_thread_exception: Exception | None = None
+    loop_fun: Callable[[Any], Any] = default_loop
 
 
 class NoKey(Exception):
@@ -362,9 +367,15 @@ def run(setup: Callable[[], Any], loop: Callable[[Any], Any], fps: int = 30):
         stge.end_frame()
     ```
     """
+    _state.loop_fun = loop
     init(fps)
     state = setup()
     while True:
         begin_frame()
-        state = loop(state)
+        state = _state.loop_fun(state)
         end_frame()
+
+
+def set_loop(loop: Callable[[Any], Any]):
+    """Change the `loop()` function used by `run()`."""
+    _state.loop_fun = loop
